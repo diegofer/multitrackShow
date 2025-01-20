@@ -39,7 +39,7 @@ def cargar_canciones_de_carpeta(ruta_carpeta, nombre_archivo_tracks="Tracks.txt"
         if os.path.isfile(ruta_archivo) and nombre_archivo.endswith(".zip"):
             titulo = cargar_titulo_de_track(ruta_archivo, nombre_archivo_tracks) #Se le pasa el nombre del archivo a cargar_titulo_de_track
             if titulo:
-                canciones_totales.append(titulo)
+                canciones_totales.append((titulo, ruta_archivo))
     return canciones_totales
 
 class MainWindow(QWidget):
@@ -81,7 +81,11 @@ class MainWindow(QWidget):
         layout.addWidget(label_cancion)
 
         self.combobox = QComboBox()
-        self.combobox.addItems(canciones)
+        for title, path in canciones:
+            self.combobox.addItem(title,path)
+
+        self.combobox.activated.connect(self.load_song)
+  
         self.combobox.setEditable(True)
 
         self.combobox.lineEdit().textChanged.connect(self.filtrar_canciones)
@@ -89,6 +93,11 @@ class MainWindow(QWidget):
         layout.addWidget(self.combobox)
 
         self.setLayout(layout)
+
+    def load_song(self, index):
+        ruta_zip = self.combobox.itemData(index)
+        if ruta_zip:
+            print(f"Seleccionaste: {ruta_zip}")
 
     def filtrar_canciones(self, texto):
         pass
