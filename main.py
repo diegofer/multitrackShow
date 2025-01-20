@@ -1,8 +1,9 @@
 import sys
 import os
 import zipfile
-from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QComboBox,
-                             QVBoxLayout)
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (QApplication, QWidget, QListWidgetItem, QListWidget,
+                             QVBoxLayout, QLineEdit, QMessageBox)
 
 def cargar_titulo_de_track(ruta_zip, nombre_archivo="Tracks.txt"):
     """Extrae el título de la segunda línea DESPUÉS de [Header]."""
@@ -46,7 +47,7 @@ class MainWindow(QWidget):
     def __init__(self, canciones):
         super().__init__()
 
-        self.setWindowTitle("Reproductor Multitrack")
+        self.setWindowTitle("Multitrack Show")
 
         # --- Estilo oscuro ---
         self.setStyleSheet("""
@@ -57,50 +58,68 @@ class MainWindow(QWidget):
             QLabel {
                 color: #abb2bf;
             }
-            QComboBox {
+            QLineEdit {
                 background-color: #3e4451;
                 color: #abb2bf;
                 border: 1px solid #5c6370;
             }
-            QComboBox QAbstractItemView {
+            QListWidget {
                 background-color: #3e4451;
                 color: #abb2bf;
                 border: 1px solid #5c6370;
-                selection-background-color: #5c6370; /* Color de selección */
             }
-            QComboBox QLineEdit {
-                background-color: #3e4451;
-                color: #abb2bf;
-                border: none;
+            QListWidget::item:selected {
+                background-color: #5c6370; /* Color de selección */
+                color: white;
             }
         """)
 
         layout = QVBoxLayout()
 
-        label_cancion = QLabel("Selecciona una canción:")
-        layout.addWidget(label_cancion)
 
-        self.combobox = QComboBox()
-        for title, path in canciones:
-            self.combobox.addItem(title,path)
+        # Caja de texto para buscar canciones
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Buscar")
+        self.search_box.textChanged.connect(self.filtrar_canciones)
+        layout.addWidget(self.search_box)
 
-        self.combobox.activated.connect(self.load_song)
-  
-        self.combobox.setEditable(True)
-
-        self.combobox.lineEdit().textChanged.connect(self.filtrar_canciones)
-
-        layout.addWidget(self.combobox)
+        # Lista para mostrar canciones filtradas
+        self.resultados_lista = QListWidget()
+        self.resultados_lista.itemClicked.connect(self.procesar_seleccion)
+        layout.addWidget(self.resultados_lista)
+        
+        # Lista completa de canciones
+        self.canciones = canciones
 
         self.setLayout(layout)
+        self.actualizar_lista(self.canciones)  # Mostrar todas las canciones al inicio
 
-    def load_song(self, index):
-        ruta_zip = self.combobox.itemData(index)
-        if ruta_zip:
-            print(f"Seleccionaste: {ruta_zip}")
+    def actualizar_lista(self, canciones):
+        """Actualiza la lista de resultados."""
+        self.resultados_lista.clear()
+        for titulo, ruta in canciones:
+            item = QListWidgetItem(titulo)  # Mostrar solo el título
+            item.setData(Qt.ItemDataRole.UserRole, ruta)  # Almacenar la ruta como dato oculto
+            self.resultados_lista.addItem(item)
 
     def filtrar_canciones(self, texto):
-        pass
+        """Filtra las canciones según el texto ingresado en la caja de búsqueda."""
+        texto = texto.lower()
+        canciones_filtradas = [
+            (titulo, ruta) for titulo, ruta in self.canciones if texto in titulo.lower()
+        ]
+        self.actualizar_lista(canciones_filtradas)
+
+    def procesar_seleccion(self, item):
+        """Maneja la selección de un ítem en la lista."""
+        try:
+            titulo = item.text()  # Obtener el título mostrado
+            ruta = item.data(Qt.ItemDataRole.UserRole)  # Obtener la ruta oculta
+            QMessageBox.information(self, "Selección", f"Seleccionaste:\nTítulo: {titulo}\nRuta: {ruta}")
+            print(f"Seleccionaste: {titulo} -> {ruta}")
+            # Aquí puedes agregar lógica para manejar la canción seleccionada
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al procesar la selección: {e}")
 
 # --- Configuración y ejecución (sin cambios)
 library_path = "C:\WorshipSong Band\Library"
@@ -112,7 +131,10 @@ if not canciones:
     exit()
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow(canciones)
-    window.show()
-    sys.exit(app.exec())
+    try:
+        app = QApplication(sys.argv)
+        window = MainWindow(canciones)
+        window.show()
+        sys.exit(app.exec())
+    except Exception as e:
+        print(f"Error crítico: {e}")
