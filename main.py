@@ -5,6 +5,10 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from gui.search_dialog import SearchDialog
 from file_manager import cargar_canciones_de_carpeta, cargar_titulo_de_track
 
+import zipfile
+import io
+import soundfile as sf
+import librosa
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -93,7 +97,34 @@ class MainWindow(QWidget):
 
     def load_song_to_playlist(self, ruta):
         print(ruta)
-        #aqui cargamos los tracks de audio en un thread
+        tracks = {}
+        samplerate = None
+        max_channels = 0
+
+        with zipfile.ZipFile(ruta, 'r') as zip_file:
+            for filename in zip_file.namelist():
+                if filename.endswith(('.wav', '.ogg', '.flac')): 
+                    print(f"Procesando archivo: {filename}") 
+
+                    with zip_file.open(filename) as file:
+                        file_data = io.BytesIO(file.read())
+
+                        try:
+                            data, fs = sf.read(file_data, always_2d=True)
+                            if samplerate is None:
+                                samplerate = fs
+                            elif samplerate != fs:
+                                print(f"Advertencia: Frecuencia de muestreo inconsistente en {filename}. Resampleando a {samplerate}.")
+                                data = librosa.resample(data.T, orig_sr=fs, target_sr=samplerate).T
+                            
+                            max_channels = max(max_channels, data.shape[1])
+                            tracks[filename] = data
+
+                        except Exception as e:
+                            print(f"Error procesando {filename}: {e}")
+        print("tracks cargados")
+
+    
 
 # --- Configuración y ejecución
 library_path = "C:\WorshipSong Band\Library"
