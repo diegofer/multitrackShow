@@ -1,9 +1,11 @@
 import sys
 import os
 import zipfile
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QApplication, QWidget, QListWidgetItem, QListWidget,
-                             QVBoxLayout, QLineEdit, QMessageBox)
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QApplication, QWidget,QLabel, QListWidgetItem, QListWidget,
+                             QVBoxLayout, QHBoxLayout, QGridLayout, QSpacerItem, QLineEdit, 
+                             QSpacerItem, QSizePolicy, QDialog,
+                             QMessageBox, QPushButton)
 
 def cargar_titulo_de_track(ruta_zip, nombre_archivo="Tracks.txt"):
     """Extrae el título de la segunda línea DESPUÉS de [Header]."""
@@ -43,6 +45,62 @@ def cargar_canciones_de_carpeta(ruta_carpeta, nombre_archivo_tracks="Tracks.txt"
                 canciones_totales.append((titulo, ruta_archivo))
     return canciones_totales
 
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Buscar")
+        self.setModal(True)  # Establecer la ventana como modal
+        self.setFixedSize(300, 400)  # Tamaño fijo para la ventana
+
+        # Lista completa de canciones
+        self.canciones = canciones
+
+        layout = QVBoxLayout()
+
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Buscar")
+        self.search_box.textChanged.connect(self.filtrar_canciones)
+
+        
+
+        # Lista para mostrar canciones filtradas
+        self.resultados_lista = QListWidget()
+        self.resultados_lista.itemClicked.connect(self.procesar_seleccion) 
+
+        layout.addWidget(self.search_box)
+        layout.addWidget(self.resultados_lista)
+        self.setLayout(layout)
+
+        self.actualizar_lista(self.canciones)  # Mostrar todas las canciones al inicio
+
+    def actualizar_lista(self, canciones):
+        """Actualiza la lista de resultados."""
+        self.resultados_lista.clear()
+        for titulo, ruta in canciones:
+            item = QListWidgetItem(titulo)  # Mostrar solo el título
+            item.setData(Qt.ItemDataRole.UserRole, ruta)  # Almacenar la ruta como dato oculto
+            self.resultados_lista.addItem(item)
+
+    def filtrar_canciones(self, texto):
+        """Filtra las canciones según el texto ingresado en la caja de búsqueda."""
+        texto = texto.lower()
+        canciones_filtradas = [
+            (titulo, ruta) for titulo, ruta in self.canciones if texto in titulo.lower()
+        ]
+        self.actualizar_lista(canciones_filtradas)
+
+    def procesar_seleccion(self, item):
+        """Maneja la selección de un ítem en la lista."""
+        try:
+            titulo = item.text()  # Obtener el título mostrado
+            ruta = item.data(Qt.ItemDataRole.UserRole)  # Obtener la ruta oculta
+            QMessageBox.information(self, "Selección", f"Seleccionaste:\nTítulo: {titulo}\nRuta: {ruta}")
+            print(f"Seleccionaste: {titulo} -> {ruta}")
+            # Aquí puedes agregar lógica para manejar la canción seleccionada
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al procesar la selección: {e}")
+
 class MainWindow(QWidget):
     def __init__(self, canciones):
         super().__init__()
@@ -73,53 +131,42 @@ class MainWindow(QWidget):
                 color: white;
             }
         """)
-
-        layout = QVBoxLayout()
-
-
-        # Caja de texto para buscar canciones
-        self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("Buscar")
-        self.search_box.textChanged.connect(self.filtrar_canciones)
-        layout.addWidget(self.search_box)
-
-        # Lista para mostrar canciones filtradas
-        self.resultados_lista = QListWidget()
-        self.resultados_lista.itemClicked.connect(self.procesar_seleccion)
-        layout.addWidget(self.resultados_lista)
         
-        # Lista completa de canciones
-        self.canciones = canciones
+        main_layout = QVBoxLayout()
 
-        self.setLayout(layout)
-        self.actualizar_lista(self.canciones)  # Mostrar todas las canciones al inicio
+        #### MENU ###
+        menu_layout = QHBoxLayout() 
 
-    def actualizar_lista(self, canciones):
-        """Actualiza la lista de resultados."""
-        self.resultados_lista.clear()
-        for titulo, ruta in canciones:
-            item = QListWidgetItem(titulo)  # Mostrar solo el título
-            item.setData(Qt.ItemDataRole.UserRole, ruta)  # Almacenar la ruta como dato oculto
-            self.resultados_lista.addItem(item)
+        self.boton_izquierda1 = QPushButton("Izquierda 1")
+        self.boton_centro1 = QPushButton("Centro 1")
+        self.boton_derecha1 = QPushButton("Derecha 1")
 
-    def filtrar_canciones(self, texto):
-        """Filtra las canciones según el texto ingresado en la caja de búsqueda."""
-        texto = texto.lower()
-        canciones_filtradas = [
-            (titulo, ruta) for titulo, ruta in self.canciones if texto in titulo.lower()
-        ]
-        self.actualizar_lista(canciones_filtradas)
+        menu_layout.addWidget(self.boton_izquierda1)
+        menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        menu_layout.addWidget(self.boton_centro1)
+        menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        menu_layout.addWidget(self.boton_derecha1)
 
-    def procesar_seleccion(self, item):
-        """Maneja la selección de un ítem en la lista."""
-        try:
-            titulo = item.text()  # Obtener el título mostrado
-            ruta = item.data(Qt.ItemDataRole.UserRole)  # Obtener la ruta oculta
-            QMessageBox.information(self, "Selección", f"Seleccionaste:\nTítulo: {titulo}\nRuta: {ruta}")
-            print(f"Seleccionaste: {titulo} -> {ruta}")
-            # Aquí puedes agregar lógica para manejar la canción seleccionada
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al procesar la selección: {e}")
+        #### PLAYLIST ###
+        playlist_layout = QHBoxLayout()
+
+        self.search_btn = QPushButton("+")
+        self.search_btn.clicked.connect(self.open_serch_dialog)
+
+        playlist_layout.addWidget(self.search_btn)
+
+        main_layout.addLayout(menu_layout)
+        main_layout.addLayout(playlist_layout)
+
+        self.setLayout(main_layout)
+
+
+    def open_serch_dialog(self):
+        search_dialog = SearchDialog()
+        search_dialog.exec()
+
+    
+
 
 # --- Configuración y ejecución (sin cambios)
 library_path = "C:\WorshipSong Band\Library"
