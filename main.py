@@ -1,52 +1,9 @@
-import sys
-import os
-import zipfile
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QApplication, QWidget, 
-                             QVBoxLayout, QHBoxLayout, QSpacerItem, 
-                             QSpacerItem, QSizePolicy, 
-                             QPushButton, QTextEdit)
-
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
+                             QSpacerItem, QSizePolicy, QPushButton, QTextEdit)                        
 from gui.search_dialog import SearchDialog
-
-def cargar_titulo_de_track(ruta_zip, nombre_archivo="Tracks.txt"):
-    """Extrae el título de la segunda línea DESPUÉS de [Header]."""
-    try:
-        with zipfile.ZipFile(ruta_zip, 'r') as archivo_zip:
-            try:
-                with archivo_zip.open(nombre_archivo) as archivo_tracks:
-                    contenido = archivo_tracks.read().decode('utf-8')
-                    header_section = contenido.split("[Header]")[1].split("[End Header]")[0]
-                    title_line = header_section.strip().splitlines()[2]
-                    if title_line:
-                        return title_line
-                    else:
-                        print(f"Advertencia: No se encontraron [Header] y al menos dos líneas después en {ruta_zip} o formato incorrecto")
-                        return None
-            except KeyError:
-                return None  # Tracks.txt no está en el ZIP
-    except FileNotFoundError:
-        print(f"Error: No se encontró el archivo ZIP en: {ruta_zip}")
-        return None
-    except zipfile.BadZipFile:
-        print(f"Advertencia: {ruta_zip} no es un ZIP válido.")
-        return None
-    except Exception as e:
-        print(f"Error inesperado al procesar {ruta_zip}: {e}")
-        return None
-
-
-def cargar_canciones_de_carpeta(ruta_carpeta, nombre_archivo_tracks="Tracks.txt"):
-    """Carga canciones SOLO de ZIPs que contienen el archivo especificado."""
-    canciones_totales = []
-    for nombre_archivo in os.listdir(ruta_carpeta):
-        ruta_archivo = os.path.join(ruta_carpeta, nombre_archivo)
-        if os.path.isfile(ruta_archivo) and nombre_archivo.endswith(".zip"):
-            titulo = cargar_titulo_de_track(ruta_archivo, nombre_archivo_tracks) #Se le pasa el nombre del archivo a cargar_titulo_de_track
-            if titulo:
-                canciones_totales.append((titulo, ruta_archivo))
-    return canciones_totales
-
+from file_manager import cargar_canciones_de_carpeta, cargar_titulo_de_track
 
 
 class MainWindow(QWidget):
@@ -87,12 +44,15 @@ class MainWindow(QWidget):
         menu_layout = QHBoxLayout() 
 
         self.boton_izquierda1 = QPushButton("Izquierda 1")
-        self.boton_centro1 = QPushButton("▶️ Play")
+        self.play_btn = QPushButton()
+        self.play_btn.setFixedSize(120, 60)
+        self.play_btn.setIcon(QIcon("assets/img/play.svg"))
+        self.play_btn.setIconSize(QSize(50, 50))
         self.boton_derecha1 = QPushButton("⚙️")
 
         menu_layout.addWidget(self.boton_izquierda1)
         menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        menu_layout.addWidget(self.boton_centro1)
+        menu_layout.addWidget(self.play_btn)
         menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         menu_layout.addWidget(self.boton_derecha1)
 
@@ -100,13 +60,14 @@ class MainWindow(QWidget):
         playlist_layout = QHBoxLayout()
         playlist_layout.setAlignment(Qt.AlignmentFlag.AlignLeft) 
 
-        self.search_btn = QPushButton("➕")
-        self.search_btn.setFixedSize(50, 50)
-        self.search_btn.clicked.connect(self.open_serch_dialog)
+        self.plus_btn = QPushButton()
+        self.plus_btn.setFixedSize(50, 50)
+        self.plus_btn.setIcon(QIcon("assets\img\plus-circle.svg"))
+        self.plus_btn.setIconSize(self.plus_btn.size()  * 0.7)
+        self.plus_btn.clicked.connect(self.open_serch_dialog)
 
-        playlist_layout.addWidget(self.search_btn)
+        playlist_layout.addWidget(self.plus_btn)
 
-        
 
         #### MIXER ###
         mixer_layout = QHBoxLayout()
@@ -132,8 +93,9 @@ class MainWindow(QWidget):
 
     def load_song_to_playlist(self, ruta):
         print(ruta)
+        #aqui cargamos los tracks de audio en un thread
 
-# --- Configuración y ejecución (sin cambios)
+# --- Configuración y ejecución
 library_path = "C:\WorshipSong Band\Library"
 file_metadata = "Tracks.txt"
 canciones = cargar_canciones_de_carpeta(library_path, file_metadata)
