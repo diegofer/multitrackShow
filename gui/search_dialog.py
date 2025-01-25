@@ -1,9 +1,12 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QApplication, QListWidgetItem, QListWidget,
                              QVBoxLayout, QLineEdit, QDialog,
                              QMessageBox)
 
 class SearchDialog(QDialog):
+
+    song_selected = Signal(str)
+
     def __init__(self):
         super().__init__()
 
@@ -19,8 +22,6 @@ class SearchDialog(QDialog):
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Buscar")
         self.search_box.textChanged.connect(self.filtrar_canciones)
-
-        
 
         # Lista para mostrar canciones filtradas
         self.resultados_lista = QListWidget()
@@ -49,12 +50,17 @@ class SearchDialog(QDialog):
         self.actualizar_lista(canciones_filtradas)
 
     def procesar_seleccion(self, item):
+        ruta = item.data(Qt.ItemDataRole.UserRole)
+        self.song_selected.emit(ruta)
+        self.accept()
+
+
         """Maneja la selección de un ítem en la lista."""
-        try:
-            titulo = item.text()  # Obtener el título mostrado
-            ruta = item.data(Qt.ItemDataRole.UserRole)  # Obtener la ruta oculta
-            QMessageBox.information(self, "Selección", f"Seleccionaste:\nTítulo: {titulo}\nRuta: {ruta}")
-            print(f"Seleccionaste: {titulo} -> {ruta}")
-            # Aquí puedes agregar lógica para manejar la canción seleccionada
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al procesar la selección: {e}")
+        # try:
+        #     titulo = item.text()  # Obtener el título mostrado
+        #     ruta = item.data(Qt.ItemDataRole.UserRole)  # Obtener la ruta oculta
+        #     QMessageBox.information(self, "Selección", f"Seleccionaste:\nTítulo: {titulo}\nRuta: {ruta}")
+        #     print(f"Seleccionaste: {titulo} -> {ruta}")
+        #     # Aquí puedes agregar lógica para manejar la canción seleccionada
+        # except Exception as e:
+        #     QMessageBox.critical(self, "Error", f"Error al procesar la selección: {e}")

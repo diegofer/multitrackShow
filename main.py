@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QApplication, QWidget, 
                              QVBoxLayout, QHBoxLayout, QSpacerItem, 
                              QSpacerItem, QSizePolicy, 
-                             QPushButton)
+                             QPushButton, QTextEdit)
 
 from gui.search_dialog import SearchDialog
 
@@ -54,6 +54,7 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Multitrack Show")
+        self.resize(1200, 650)
 
         # --- Estilo oscuro ---
         self.setStyleSheet("""
@@ -86,8 +87,8 @@ class MainWindow(QWidget):
         menu_layout = QHBoxLayout() 
 
         self.boton_izquierda1 = QPushButton("Izquierda 1")
-        self.boton_centro1 = QPushButton("Centro 1")
-        self.boton_derecha1 = QPushButton("Derecha 1")
+        self.boton_centro1 = QPushButton("▶️ Play")
+        self.boton_derecha1 = QPushButton("⚙️")
 
         menu_layout.addWidget(self.boton_izquierda1)
         menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -97,24 +98,40 @@ class MainWindow(QWidget):
 
         #### PLAYLIST ###
         playlist_layout = QHBoxLayout()
+        playlist_layout.setAlignment(Qt.AlignmentFlag.AlignLeft) 
 
-        self.search_btn = QPushButton("+")
+        self.search_btn = QPushButton("➕")
+        self.search_btn.setFixedSize(50, 50)
         self.search_btn.clicked.connect(self.open_serch_dialog)
 
         playlist_layout.addWidget(self.search_btn)
 
+        
+
+        #### MIXER ###
+        mixer_layout = QHBoxLayout()
+        area_expansible = QTextEdit()
+        area_expansible.setPlaceholderText("Área expansible (rellena el espacio restante)")
+        area_expansible.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        mixer_layout.addWidget(area_expansible)
+
+
+        #### ADD LAYOUTS ###
         main_layout.addLayout(menu_layout)
         main_layout.addLayout(playlist_layout)
+        main_layout.addLayout(mixer_layout)
 
         self.setLayout(main_layout)
 
 
     def open_serch_dialog(self):
         search_dialog = SearchDialog()
+        search_dialog.song_selected.connect(self.load_song_to_playlist)
         search_dialog.exec()
 
-    
-
+    def load_song_to_playlist(self, ruta):
+        print(ruta)
 
 # --- Configuración y ejecución (sin cambios)
 library_path = "C:\WorshipSong Band\Library"
