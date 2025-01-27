@@ -4,11 +4,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QSpacerItem, QSizePolicy, QPushButton, QTextEdit)                        
 from gui.search_dialog import SearchDialog
 from file_manager import cargar_canciones_de_carpeta, cargar_titulo_de_track
-
-import zipfile
-import io
-import soundfile as sf
-import librosa
+from load_audio_manager import load_tracks_from_zip, load_tracks_from_zip_parallel
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -97,32 +93,11 @@ class MainWindow(QWidget):
 
     def load_song_to_playlist(self, ruta):
         print(ruta)
-        tracks = {}
-        samplerate = None
-        max_channels = 0
 
-        with zipfile.ZipFile(ruta, 'r') as zip_file:
-            for filename in zip_file.namelist():
-                if filename.endswith(('.wav', '.ogg', '.flac')): 
-                    print(f"Procesando archivo: {filename}") 
+        tracks, samplerate = load_tracks_from_zip_parallel(ruta, None)
+        print(samplerate)
+        print(tracks)
 
-                    with zip_file.open(filename) as file:
-                        file_data = io.BytesIO(file.read())
-
-                        try:
-                            data, fs = sf.read(file_data, always_2d=True)
-                            if samplerate is None:
-                                samplerate = fs
-                            elif samplerate != fs:
-                                print(f"Advertencia: Frecuencia de muestreo inconsistente en {filename}. Resampleando a {samplerate}.")
-                                data = librosa.resample(data.T, orig_sr=fs, target_sr=samplerate).T
-                            
-                            max_channels = max(max_channels, data.shape[1])
-                            tracks[filename] = data
-
-                        except Exception as e:
-                            print(f"Error procesando {filename}: {e}")
-        print("tracks cargados")
 
     
 
