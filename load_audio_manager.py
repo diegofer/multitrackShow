@@ -1,8 +1,9 @@
 import zipfile
-import io
+import io, os
 import soundfile as sf
 import librosa
 import concurrent.futures
+import psutil
 
 
 def load_tracks_from_zip(ruta):
@@ -40,6 +41,18 @@ def load_tracks_from_zip(ruta):
     Permite cargar audio usando todos los hilos disponibles para mayor velocidad
 """
 
+# definir el numero de hilos a usar
+def calcular_hilos_adaptativos(porcentaje=75, reserva=2):
+    total_hilos = os.cpu_count()
+    uso_actual = psutil.cpu_percent(interval=1, percpu=True)
+    hilos_libres = sum(1 for uso in uso_actual if uso < 50)
+    hilos_por_porcentaje = int(total_hilos * (porcentaje / 100))
+    
+    # Toma el mínimo entre los hilos calculados por porcentaje y los hilos libres menos la reserva
+    hilos_a_usar = max(1, min(hilos_por_porcentaje, hilos_libres - reserva))
+    return hilos_a_usar
+
+
 def process_audio_file(zip_file, filename, samplerate=None):
     try:
         with zip_file.open(filename) as file:
@@ -69,7 +82,11 @@ def load_tracks_from_zip_parallel(zip_path, common_samplerate=None):
         print(f"Archivos .ogg encontrados: {ogg_files}")
 
         # Usa ThreadPoolExecutor para procesar los archivos en paralelo
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        num_hilos = calcular_hilos_adaptativos(porcentaje=75, reserva=2)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_hilos) as executor:
+            total_hilos = os.cpu_count()
+            print(f"Hilos totales disponibles: {total_hilos}")
+            print(f"Número de hilos utilizados: {executor._max_workers}")
             futures = {
                 executor.submit(process_audio_file, zip_file, filename, samplerate): filename
                 for filename in ogg_files
