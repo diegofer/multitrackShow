@@ -74,14 +74,19 @@ def load_tracks_from_zip_parallel(zip_path, common_samplerate=None):
     """
     tracks = {}
     samplerate = common_samplerate  # Establece un samplerate común si se proporciona
+    text_file = None
 
     with zipfile.ZipFile(zip_path, 'r') as zip_file:
-        # Filtra solo los archivos .ogg dentro del ZIP
-        ogg_files = [filename for filename in zip_file.namelist() if filename.endswith('.ogg')]
         
-        print(f"Archivos .ogg encontrados: {ogg_files}")
+        with zip_file.open("Tracks.txt") as txt:
+            text_file = txt.read().decode('utf-8')
 
-        # Usa ThreadPoolExecutor para procesar los archivos en paralelo
+        # Filtra solo los archivos .ogg dentro del ZIP
+        track_files = [filename for filename in zip_file.namelist() if filename.endswith('.ogg')]
+        
+        print(f"Archivos encontrados: {track_files}")
+
+        # cargar archivos en paralelo con ThreadPoolExecutor
         num_hilos = calcular_hilos_adaptativos(porcentaje=75, reserva=2)
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_hilos) as executor:
             total_hilos = os.cpu_count()
@@ -89,7 +94,7 @@ def load_tracks_from_zip_parallel(zip_path, common_samplerate=None):
             print(f"Número de hilos utilizados: {executor._max_workers}")
             futures = {
                 executor.submit(process_audio_file, zip_file, filename, samplerate): filename
-                for filename in ogg_files
+                for filename in track_files
             }
 
             for future in concurrent.futures.as_completed(futures):
@@ -105,4 +110,4 @@ def load_tracks_from_zip_parallel(zip_path, common_samplerate=None):
                 except Exception as e:
                     print(f"Error en el procesamiento paralelo de {filename}: {e}")
 
-    return tracks, samplerate
+    return tracks, samplerate, text_file

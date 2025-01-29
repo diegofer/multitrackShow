@@ -37,10 +37,10 @@ class MainWindow(QWidget):
                 color: white;
             }
         """)
-        
+        self.playlist = []
         main_layout = QVBoxLayout()
 
-        #### MENU ###
+        #### MENU BAR ###
         menu_layout = QHBoxLayout() 
 
         self.boton_izquierda1 = QPushButton("Izquierda 1")
@@ -56,20 +56,22 @@ class MainWindow(QWidget):
         menu_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         menu_layout.addWidget(self.boton_derecha1)
 
-        #### PLAYLIST ###
-        playlist_layout = QHBoxLayout()
-        playlist_layout.setAlignment(Qt.AlignmentFlag.AlignLeft) 
+        #### PLAYLIST BAR ###
+        self.playlist_layout = QHBoxLayout()
+        self.playlist_layout.setContentsMargins(0, 0, 0, 0)
+        self.playlist_layout.setAlignment(Qt.AlignmentFlag.AlignLeft) 
+        self.playlist_layout.setSpacing(5)
 
         self.plus_btn = QPushButton()
-        self.plus_btn.setFixedSize(50, 50)
+        self.plus_btn.setFixedSize(50, 100)
         self.plus_btn.setIcon(QIcon("assets\img\plus-circle.svg"))
         self.plus_btn.setIconSize(self.plus_btn.size()  * 0.7)
         self.plus_btn.clicked.connect(self.open_serch_dialog)
 
-        playlist_layout.addWidget(self.plus_btn)
+        self.playlist_layout.addWidget(self.plus_btn)
 
 
-        #### MIXER ###
+        #### MIXER SECTION ###
         mixer_layout = QHBoxLayout()
         area_expansible = QTextEdit()
         area_expansible.setPlaceholderText("Área expansible (rellena el espacio restante)")
@@ -80,7 +82,7 @@ class MainWindow(QWidget):
 
         #### ADD LAYOUTS ###
         main_layout.addLayout(menu_layout)
-        main_layout.addLayout(playlist_layout)
+        main_layout.addLayout(self.playlist_layout)
         main_layout.addLayout(mixer_layout)
 
         self.setLayout(main_layout)
@@ -93,10 +95,22 @@ class MainWindow(QWidget):
 
     def load_song_to_playlist(self, ruta):
         print(ruta)
-
-        tracks, samplerate = load_tracks_from_zip_parallel(ruta, None)
+        multitrack_loaded = {}
+        tracks, samplerate, text_file = load_tracks_from_zip_parallel(ruta, None)
+        
+        multitrack_loaded["tracks"] = tracks
+        multitrack_loaded["sr"] = samplerate
+        multitrack_loaded["txt"] = text_file
+        self.playlist.append(multitrack_loaded)
+        
         print(samplerate)
         print(tracks)
+        print(text_file)
+
+        self.song_btn = QPushButton('cancion 1')
+        self.song_btn.setFixedSize(150, 100)
+
+        self.playlist_layout.addWidget(self.song_btn)
 
 
     
