@@ -13,30 +13,7 @@ class MainWindow(QWidget):
         self.setWindowTitle("Multitrack Show")
         self.resize(1200, 650)
 
-        # --- Estilo oscuro ---
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #282c34; /* Gris oscuro */
-                color: #abb2bf; /* Gris claro */
-            }
-            QLabel {
-                color: #abb2bf;
-            }
-            QLineEdit {
-                background-color: #3e4451;
-                color: #abb2bf;
-                border: 1px solid #5c6370;
-            }
-            QListWidget {
-                background-color: #3e4451;
-                color: #abb2bf;
-                border: 1px solid #5c6370;
-            }
-            QListWidget::item:selected {
-                background-color: #5c6370; /* Color de selección */
-                color: white;
-            }
-        """)
+       
         self.playlist = []
         main_layout = QVBoxLayout()
 
@@ -101,18 +78,26 @@ class MainWindow(QWidget):
         multitrack_loaded["tracks"] = tracks
         multitrack_loaded["sr"] = samplerate
         multitrack_loaded["txt"] = text_file
+        
         self.playlist.append(multitrack_loaded)
         
+        multitrack_index = len(self.playlist) - 1
+
         print(samplerate)
         print(tracks)
         print(text_file)
 
-        self.song_btn = QPushButton('cancion 1')
-        self.song_btn.setFixedSize(150, 100)
+        song_btn = QPushButton(f'cancion {multitrack_index}')
+        song_btn.setProperty('index', multitrack_index)
+        song_btn.setFixedSize(150, 100)
 
-        self.playlist_layout.addWidget(self.song_btn)
+        song_btn.clicked.connect(lambda checked=False, boton=song_btn: self.boton_clicado(boton, checked))
 
+        self.playlist_layout.addWidget(song_btn)
 
+    def boton_clicado(self, boton, checked):
+        dato = boton.property("index")  # Recupera el dato numérico
+        print(f"Botón '{boton.text()}' clicado. Dato asociado: {dato}")
     
 
 # --- Configuración y ejecución
