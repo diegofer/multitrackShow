@@ -3,8 +3,9 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QSpacerItem, QSizePolicy, QPushButton, QTextEdit)                        
 from gui.search_dialog import SearchDialog
+from gui.track_widget import TrackWidget
 from file_manager import cargar_canciones_de_carpeta, cargar_titulo_de_track
-from load_audio_manager import load_tracks_from_zip, load_tracks_from_zip_parallel
+from load_audio_manager import load_tracks_from_zip_parallel
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -50,11 +51,22 @@ class MainWindow(QWidget):
 
         #### MIXER SECTION ###
         mixer_layout = QHBoxLayout()
-        area_expansible = QTextEdit()
-        area_expansible.setPlaceholderText("Área expansible (rellena el espacio restante)")
-        area_expansible.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        mixer_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        mixer_layout.addWidget(area_expansible)
+        track = TrackWidget('Click')
+        track1 = TrackWidget('Bass')
+        track2 = TrackWidget('Gitar')
+        track3 = TrackWidget('Drumps')
+        track4 = TrackWidget('EG 1')
+        track5 = TrackWidget('EG 2')
+
+
+        mixer_layout.addWidget(track)
+        mixer_layout.addWidget(track1)
+        mixer_layout.addWidget(track2)
+        mixer_layout.addWidget(track3)
+        mixer_layout.addWidget(track4)
+        mixer_layout.addWidget(track5)
 
 
         #### ADD LAYOUTS ###
@@ -83,11 +95,9 @@ class MainWindow(QWidget):
         
         multitrack_index = len(self.playlist) - 1
 
-        print(samplerate)
-        print(tracks)
-        print(text_file)
-
-        song_btn = QPushButton(f'cancion {multitrack_index}')
+        # Actualizar PLAYLIST BAR con botones
+        song_title = self.get_title_from_stream(text_file)
+        song_btn = QPushButton(song_title)
         song_btn.setProperty('index', multitrack_index)
         song_btn.setFixedSize(150, 100)
 
@@ -98,6 +108,11 @@ class MainWindow(QWidget):
     def boton_clicado(self, boton, checked):
         dato = boton.property("index")  # Recupera el dato numérico
         print(f"Botón '{boton.text()}' clicado. Dato asociado: {dato}")
+
+    def get_title_from_stream(self, text_stream):
+        header_section = text_stream.split("[Header]")[1].split("[End Header]")[0]
+        title_line = header_section.strip().splitlines()[2]
+        return title_line
     
 
 # --- Configuración y ejecución
