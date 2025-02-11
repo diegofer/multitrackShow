@@ -82,7 +82,7 @@ def load_tracks_from_zip_parallel(zip_path, common_samplerate=None):
             text_file = txt.read().decode('utf-8')
 
         # Filtra solo los archivos .ogg dentro del ZIP
-        track_files = [filename for filename in zip_file.namelist() if filename.endswith('.ogg')]
+        track_files = [filename for filename in zip_file.namelist() if filename.endswith(('.ogg', '.mp3'))]
         
         print(f"Archivos encontrados: {track_files}")
 
